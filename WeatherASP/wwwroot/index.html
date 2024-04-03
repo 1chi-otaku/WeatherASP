@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Weather Forecast</h1>
+            <p>Enter a city name to get the weather forecast</p>
+        </header>
+        <div class="search-container">
+            <input type="text" name="city" id="city" placeholder="Enter city name">
+            <button type="button" id="search"><i class="fas fa-search"></i> Search</button>
+        </div>
+        <div class="weather-container" id="weather-container">
+        </div>
+        <div class="hourly-weather" id="hourly-weather">
+        </div>
+    </div>
+
+    <script>
+       document.addEventListener('DOMContentLoaded', function () {
+    let searchButton = document.getElementById('search');
+    let cityInput = document.getElementById('city');
+    let weatherContainer = document.getElementById('weather-container');
+    let hourlyWeatherContainer = document.getElementById('hourly-weather');
+
+    searchButton.addEventListener('click', async function () {
+        let apiKey = 'c33e1e217cb30fbcf2d2da6da8717ffa';
+        let city = cityInput.value.trim();
+
+        if (city) {
+            let apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+            let hourlyApiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+
+            hourlyWeatherContainer.innerHTML = '';
+
+            try {
+                let response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                let data = await response.json();
+
+                let weatherHTML = `
+                    <div class="weather-card">
+                        <h2>${data.name}</h2>
+                        <p>${new Date().toLocaleDateString()}</p>
+                        <p>${data.weather[0].description}</p>
+                        <img src="http://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Weather icon">
+                        <p>Temperature: ${data.main.temp}°C</p>
+                        <p>Min Temperature: ${data.main.temp_min}°C</p>
+                        <p>Max Temperature: ${data.main.temp_max}°C</p>
+                        <p>Wind Speed: ${data.wind.speed} m/s</p>
+                    </div>
+                `;
+
+                weatherContainer.innerHTML = weatherHTML;
+
+                let hourlyResponse = await fetch(hourlyApiUrl);
+                if (!hourlyResponse.ok) {
+                    if (hourlyResponse.status === 404) {
+                        throw new Error(`404. Not found. Please enter different city.`);
+                    } else {
+                        throw new Error(`HTTP error! Status: ${hourlyResponse.status}`);
+                    }
+                }
+                let hourlyData = await hourlyResponse.json();
+
+                let hourlyWeatherHTML = `
+                    <div class="hourly-weather-content">
+                        ${hourlyData.list.slice(0, 6).map(hour => `
+                            <div class="hour">
+                                <p>${new Date(hour.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <img src="http://openweathermap.org/img/wn/${hour.weather[0].icon}.png" alt="Weather icon">
+                                <p>${hour.weather[0].description}</p>
+                                <p>${hour.main.temp}°C</p>
+                                <p>${hour.wind.speed} m/s</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                hourlyWeatherContainer.innerHTML = hourlyWeatherHTML;
+            } catch (error) {
+                console.error('Error:', error);
+                weatherContainer.innerHTML = `<p>${error.message}</p>`;
+            }
+        } else {
+            alert('Please enter a city name.');
+        }
+    });
+});
+
+    </script>
+</body>
+</html>
